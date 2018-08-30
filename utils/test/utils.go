@@ -14,12 +14,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/10gen/stitch-cli/api"
-	"github.com/10gen/stitch-cli/api/mdbcloud"
-	"github.com/10gen/stitch-cli/auth"
-	"github.com/10gen/stitch-cli/models"
-	"github.com/10gen/stitch-cli/storage"
-	"github.com/10gen/stitch-cli/user"
+	"github.com/sindbach/stitch-cli/api"
+	"github.com/sindbach/stitch-cli/api/mdbcloud"
+	"github.com/sindbach/stitch-cli/auth"
+	"github.com/sindbach/stitch-cli/models"
+	"github.com/sindbach/stitch-cli/storage"
+	"github.com/sindbach/stitch-cli/user"
 
 	"github.com/smartystreets/goconvey/convey/gotest"
 	"gopkg.in/yaml.v2"
@@ -258,7 +258,7 @@ func (msc *MockStitchClient) FetchAppByGroupIDAndClientAppID(groupID, clientAppI
 		return msc.FetchAppByGroupIDAndClientAppIDFn(groupID, clientAppID)
 	}
 
-	return nil, api.ErrAppNotFound{clientAppID}
+	return nil, api.ErrAppNotFound{ClientAppID: clientAppID}
 }
 
 // FetchAppByClientAppID fetches a Stitch app given a clientAppID
@@ -267,7 +267,7 @@ func (msc *MockStitchClient) FetchAppByClientAppID(clientAppID string) (*models.
 		return msc.FetchAppByClientAppIDFn(clientAppID)
 	}
 
-	return nil, api.ErrAppNotFound{clientAppID}
+	return nil, api.ErrAppNotFound{ClientAppID: clientAppID}
 }
 
 // MockMDBClient satisfies a mdbcloud.Client

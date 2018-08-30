@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/10gen/stitch-cli/api"
-	"github.com/10gen/stitch-cli/auth"
-	"github.com/10gen/stitch-cli/user"
+	"github.com/sindbach/stitch-cli/api"
+	"github.com/sindbach/stitch-cli/auth"
+	"github.com/sindbach/stitch-cli/user"
 
-	u "github.com/10gen/stitch-cli/utils/test"
+	u "github.com/sindbach/stitch-cli/utils/test"
 	gc "github.com/smartystreets/goconvey/convey"
 )
 

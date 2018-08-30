@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/10gen/stitch-cli/utils"
+	"github.com/sindbach/stitch-cli/utils"
 )
 
 // AppConfigFileName is the name of top-level config file describing the app

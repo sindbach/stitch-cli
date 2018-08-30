@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/10gen/stitch-cli/auth"
+	"github.com/sindbach/stitch-cli/auth"
 )
 
 // Errors related to user configuration.

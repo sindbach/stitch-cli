@@ -10,11 +10,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/10gen/stitch-cli/api"
-	"github.com/10gen/stitch-cli/api/mdbcloud"
-	"github.com/10gen/stitch-cli/storage"
-	"github.com/10gen/stitch-cli/user"
-	"github.com/10gen/stitch-cli/utils"
+	"github.com/sindbach/stitch-cli/api"
+	"github.com/sindbach/stitch-cli/api/mdbcloud"
+	"github.com/sindbach/stitch-cli/storage"
+	"github.com/sindbach/stitch-cli/user"
+	"github.com/sindbach/stitch-cli/utils"
 
 	"github.com/mattn/go-isatty"
 	"github.com/mitchellh/cli"

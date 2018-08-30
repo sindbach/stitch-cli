@@ -3,8 +3,8 @@ package utils_test
 import (
 	"testing"
 
-	"github.com/10gen/stitch-cli/utils"
-	u "github.com/10gen/stitch-cli/utils/test"
+	"github.com/sindbach/stitch-cli/utils"
+	u "github.com/sindbach/stitch-cli/utils/test"
 	gc "github.com/smartystreets/goconvey/convey"
 )
 

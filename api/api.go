@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/10gen/stitch-cli/auth"
-	"github.com/10gen/stitch-cli/user"
+	"github.com/sindbach/stitch-cli/auth"
+	"github.com/sindbach/stitch-cli/user"
 )
 
 // DefaultBaseURL is the default prod base url for Stitch apps

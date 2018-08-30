@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/10gen/stitch-cli/auth"
-	"github.com/10gen/stitch-cli/models"
+	"github.com/sindbach/stitch-cli/auth"
+	"github.com/sindbach/stitch-cli/models"
 )
 
 const (

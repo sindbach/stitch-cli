@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/10gen/stitch-cli/utils"
+	"github.com/sindbach/stitch-cli/utils"
 
 	"github.com/edaniels/digest"
 )

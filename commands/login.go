@@ -3,8 +3,8 @@ package commands
 import (
 	"fmt"
 
-	"github.com/10gen/stitch-cli/api"
-	"github.com/10gen/stitch-cli/auth"
+	"github.com/sindbach/stitch-cli/api"
+	"github.com/sindbach/stitch-cli/auth"
 
 	"github.com/mitchellh/cli"
 )

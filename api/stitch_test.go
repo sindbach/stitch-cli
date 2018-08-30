@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/10gen/stitch-cli/api"
+	"github.com/sindbach/stitch-cli/api"
 
-	u "github.com/10gen/stitch-cli/utils/test"
+	u "github.com/sindbach/stitch-cli/utils/test"
 	gc "github.com/smartystreets/goconvey/convey"
 )
 
