@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/10gen/stitch-cli/commands"
-	"github.com/10gen/stitch-cli/utils"
+	"github.com/sindbach/stitch-cli/commands"
+	"github.com/sindbach/stitch-cli/utils"
 
 	"github.com/mitchellh/cli"
 )
@@ -22,11 +22,14 @@ func main() {
 	}
 
 	c.Commands = map[string]cli.CommandFactory{
-		"whoami": commands.NewWhoamiCommandFactory(ui),
-		"login":  commands.NewLoginCommandFactory(ui),
-		"logout": commands.NewLogoutCommandFactory(ui),
-		"export": commands.NewExportCommandFactory(ui),
-		"import": commands.NewImportCommandFactory(ui),
+		"whoami":        commands.NewWhoamiCommandFactory(ui),
+		"login":         commands.NewLoginCommandFactory(ui),
+		"logout":        commands.NewLogoutCommandFactory(ui),
+		"stitch":        commands.NewStitchCommandFactory(ui),
+		"stitch export": commands.NewExportCommandFactory(ui),
+		"stitch import": commands.NewImportCommandFactory(ui),
+		"atlas":         commands.NewAtlasCommandFactory(ui),
+		"atlas cluster": commands.NewAtlasClusterCommandFactory(ui),
 	}
 
 	exitStatus, err := c.Run()
