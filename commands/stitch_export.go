@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/10gen/stitch-cli/models"
-	u "github.com/10gen/stitch-cli/user"
-	"github.com/10gen/stitch-cli/utils"
+	"github.com/sindbach/stitch-cli/models"
+	u "github.com/sindbach/stitch-cli/user"
+	"github.com/sindbach/stitch-cli/utils"
 
 	"github.com/mitchellh/cli"
 	"github.com/mitchellh/go-homedir"

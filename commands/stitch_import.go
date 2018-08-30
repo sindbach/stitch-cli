@@ -8,10 +8,10 @@ import (
 	"io"
 	"os"
 
-	"github.com/10gen/stitch-cli/api"
-	"github.com/10gen/stitch-cli/models"
-	u "github.com/10gen/stitch-cli/user"
-	"github.com/10gen/stitch-cli/utils"
+	"github.com/sindbach/stitch-cli/api"
+	"github.com/sindbach/stitch-cli/models"
+	u "github.com/sindbach/stitch-cli/user"
+	"github.com/sindbach/stitch-cli/utils"
 
 	"github.com/mitchellh/cli"
 	"github.com/mitchellh/go-homedir"
@@ -43,7 +43,7 @@ func NewImportCommandFactory(ui cli.Ui) cli.CommandFactory {
 
 		return &ImportCommand{
 			BaseCommand: &BaseCommand{
-				Name: "import",
+				Name: "stitch import",
 				UI:   ui,
 			},
 			workingDirectory: workingDirectory,
