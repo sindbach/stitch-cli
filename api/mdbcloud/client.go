@@ -26,9 +26,20 @@ type Group struct {
 	Name string `json:"name"`
 }
 
+type orgResponse struct {
+	Results []Org `json:"results"`
+}
+
+// Org represents a mongodb atlas organizations
+type Org struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // Client provides access to the MongoDB Cloud Manager APIs
 type Client interface {
 	WithAuth(username, apiKey string) Client
+	Orgs() ([]Org, error)
 	Groups() ([]Group, error)
 	GroupByName(string) (*Group, error)
 	DeleteDatabaseUser(groupID, username string) error
@@ -51,6 +62,32 @@ func (client simpleClient) WithAuth(username, apiKey string) Client {
 	// digest.NewTransport will use http.DefaultTransport
 	client.transport = digest.NewTransport(username, apiKey)
 	return &client
+}
+
+// Orgs returns all available Orgs for the user
+func (client *simpleClient) Orgs() ([]Org, error) {
+	resp, err := client.do(
+		http.MethodGet,
+		fmt.Sprintf("%s/api/atlas/v1.0/orgs", client.atlasAPIBaseURL),
+		nil,
+		true,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to fetch available Project IDs: %s", resp.Status)
+	}
+
+	dec := json.NewDecoder(resp.Body)
+	var orgResponse orgResponse
+	if err := dec.Decode(&orgResponse); err != nil {
+		return nil, err
+	}
+
+	return orgResponse.Results, nil
 }
 
 // Groups returns all available Groups for the user

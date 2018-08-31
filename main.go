@@ -30,6 +30,7 @@ func main() {
 		"stitch import": commands.NewImportCommandFactory(ui),
 		"atlas":         commands.NewAtlasCommandFactory(ui),
 		"atlas cluster": commands.NewAtlasClusterCommandFactory(ui),
+		"atlas org":     commands.NewAtlasOrgCommandFactory(ui),
 	}
 
 	exitStatus, err := c.Run()
