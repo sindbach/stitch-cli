@@ -78,7 +78,7 @@ func (client *simpleClient) Orgs() ([]Org, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch available Project IDs: %s", resp.Status)
+		return nil, fmt.Errorf("failed to fetch available Organization IDs: %s", resp.Status)
 	}
 
 	dec := json.NewDecoder(resp.Body)

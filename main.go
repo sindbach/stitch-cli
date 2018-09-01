@@ -31,6 +31,7 @@ func main() {
 		"atlas":         commands.NewAtlasCommandFactory(ui),
 		"atlas cluster": commands.NewAtlasClusterCommandFactory(ui),
 		"atlas org":     commands.NewAtlasOrgCommandFactory(ui),
+		"atlas project": commands.NewAtlasProjectCommandFactory(ui),
 	}
 
 	exitStatus, err := c.Run()
