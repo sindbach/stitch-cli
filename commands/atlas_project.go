@@ -8,6 +8,11 @@ import (
 	"github.com/mitchellh/cli"
 )
 
+const (
+	flagList      = "list"
+	flagProjectID = "project-id"
+)
+
 // NewAtlasProjectCommandFactory returns a new cli.CommandFactory given a cli.Ui
 func NewAtlasProjectCommandFactory(ui cli.Ui) cli.CommandFactory {
 	return func() (cli.Command, error) {
@@ -25,47 +30,54 @@ func NewAtlasProjectCommandFactory(ui cli.Ui) cli.CommandFactory {
 type AtlasProjectCommand struct {
 	*BaseCommand
 
-	flagList bool
+	flagList      bool
+	flagProjectID string
 }
 
 // Help returns long-form help information for this command
-func (ec *AtlasProjectCommand) Help() string {
+func (ac *AtlasProjectCommand) Help() string {
 	return `Atlas Projects
 
 OPTIONS:
   --list
 	Get all Atlas projects the authenticated user has access to.
+  --project-id [string]
+	The Atlas Project ID.
 ` +
-		ec.BaseCommand.Help()
+		ac.BaseCommand.Help()
 }
 
 // Synopsis returns a one-liner description for this command
-func (ec *AtlasProjectCommand) Synopsis() string {
+func (ac *AtlasProjectCommand) Synopsis() string {
 	return `Access Atlas Organizations.`
 }
 
 // Run executes the command
-func (ec *AtlasProjectCommand) Run(args []string) int {
-	set := ec.NewFlagSet()
+func (ac *AtlasProjectCommand) Run(args []string) int {
+	set := ac.NewFlagSet()
 
-	set.BoolVar(&ec.flagList, "list", false, "")
+	set.BoolVar(&ac.flagList, flagList, false, "")
+	set.StringVar(&ac.flagProjectID, flagProjectID, "", "")
 
-	if err := ec.BaseCommand.run(args); err != nil {
-		ec.UI.Error(err.Error())
+	if err := ac.BaseCommand.run(args); err != nil {
+		ac.UI.Error(err.Error())
 		return 1
 	}
-
-	if err := ec.run(); err != nil {
-		ec.UI.Error(err.Error())
+	if !ac.flagList || ac.flagProjectID == "" {
+		ac.UI.Error("see --help for more information")
+		return 1
+	}
+	if err := ac.run(ac.flagList, ac.flagProjectID); err != nil {
+		ac.UI.Error(err.Error())
 		return 1
 	}
 
 	return 0
 }
 
-func (ec *AtlasProjectCommand) run() error {
+func (ac *AtlasProjectCommand) run(flagList bool, flagProjectID string) error {
 
-	user, err := ec.User()
+	user, err := ac.User()
 	if err != nil {
 		return err
 	}
@@ -74,20 +86,28 @@ func (ec *AtlasProjectCommand) run() error {
 		return u.ErrNotLoggedIn
 	}
 
-	ac, err := ec.AtlasClient()
+	client, err := ac.AtlasClient()
 	if err != nil {
 		return err
 	}
+	if flagProjectID != "" {
+		group, err := client.GroupByID(flagProjectID)
+		if err != nil {
+			return fmt.Errorf("failed to list Project info: %s", err)
+		}
+		fmt.Println(group.Name)
+		fmt.Println(group.ID)
+		return nil
+	}
 
-	orgs, err := ac.Groups()
+	groups, err := client.Groups()
 	if err != nil {
 		return fmt.Errorf("failed to list Projects: %s", err)
 	}
 
-	for _, org := range orgs {
-		fmt.Println(org.Name)
-		fmt.Println(org.ID)
-
+	for _, group := range groups {
+		fmt.Println(group.Name)
+		fmt.Println(group.ID)
 	}
 	return nil
 }

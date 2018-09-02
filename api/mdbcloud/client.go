@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -41,6 +42,7 @@ type Client interface {
 	WithAuth(username, apiKey string) Client
 	Orgs() ([]Org, error)
 	Groups() ([]Group, error)
+	GroupByID(string) (*Group, error)
 	GroupByName(string) (*Group, error)
 	DeleteDatabaseUser(groupID, username string) error
 }
@@ -114,6 +116,36 @@ func (client *simpleClient) Groups() ([]Group, error) {
 	}
 
 	return groupResponse.Results, nil
+}
+
+// GroupByID returns info of a Group for the user
+func (client *simpleClient) GroupByID(groupID string) (*Group, error) {
+	resp, err := client.do(
+		http.MethodGet,
+		fmt.Sprintf("%s/api/public/v1.0/groups/%s", client.atlasAPIBaseURL, groupID),
+		nil,
+		true,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to fetch available Project IDs: %s", resp.Status)
+	}
+
+	dec := json.NewDecoder(resp.Body)
+	var groupResponse Group
+	fmt.Println(resp.Body)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	bodyString := string(bodyBytes)
+	fmt.Println(bodyString)
+	if err := dec.Decode(&groupResponse); err != nil {
+		return nil, err
+	}
+
+	return &groupResponse, nil
 }
 
 func (client *simpleClient) GroupByName(groupName string) (*Group, error) {

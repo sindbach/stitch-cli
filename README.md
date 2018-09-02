@@ -1,4 +1,4 @@
-# MongoDB Stitch CLI
+# MongoDB Cloud CLI
 
 ## Installation
 
