@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -23,8 +22,11 @@ type groupResponse struct {
 
 // Group represents a mongodb atlas group
 type Group struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	OrgID           string `json:"orgId"`
+	ReplicaSetCount int    `json:"replicaSetCount"`
+	ShardCount      int    `json:"shardCount"`
 }
 
 type orgResponse struct {
@@ -39,12 +41,12 @@ type Org struct {
 
 // Client provides access to the MongoDB Cloud Manager APIs
 type Client interface {
-	WithAuth(username, apiKey string) Client
+	WithAuth(username string, apiKey string) Client
 	Orgs() ([]Org, error)
 	Groups() ([]Group, error)
 	GroupByID(string) (*Group, error)
 	GroupByName(string) (*Group, error)
-	DeleteDatabaseUser(groupID, username string) error
+	DeleteDatabaseUser(groupID string, username string) error
 }
 
 type simpleClient struct {
@@ -120,60 +122,58 @@ func (client *simpleClient) Groups() ([]Group, error) {
 
 // GroupByID returns info of a Group for the user
 func (client *simpleClient) GroupByID(groupID string) (*Group, error) {
-	resp, err := client.do(
-		http.MethodGet,
+	var groupResponse Group
+	err := client.SingleFetch(
 		fmt.Sprintf("%s/api/public/v1.0/groups/%s", client.atlasAPIBaseURL, groupID),
-		nil,
-		true,
+		fmt.Sprintf("failed to find information for ProjectID [%s]", groupID),
+		fmt.Sprintf("failed to fetch ProjectID [%s]", groupID),
+		&groupResponse,
 	)
 	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch available Project IDs: %s", resp.Status)
-	}
-
-	dec := json.NewDecoder(resp.Body)
-	var groupResponse Group
-	fmt.Println(resp.Body)
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	bodyString := string(bodyBytes)
-	fmt.Println(bodyString)
-	if err := dec.Decode(&groupResponse); err != nil {
-		return nil, err
+		return nil, fmt.Errorf(err.Error())
 	}
 
 	return &groupResponse, nil
 }
 
 func (client *simpleClient) GroupByName(groupName string) (*Group, error) {
+	var groupResponse Group
+	err := client.SingleFetch(
+		fmt.Sprintf("%s/api/public/v1.0/groups/byName/%s", client.atlasAPIBaseURL, groupName),
+		fmt.Sprintf("failed to find Project by name [%s]", groupName),
+		fmt.Sprintf("failed to fetch Project by name [%s]", groupName),
+		&groupResponse,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(err.Error())
+	}
+	return &groupResponse, nil
+}
+
+func (client *simpleClient) SingleFetch(url string, notFoundMsg string, failedMsg string, response interface{}) error {
 	resp, err := client.do(
 		http.MethodGet,
-		fmt.Sprintf("%s/api/public/v1.0/groups/byName/%s", client.atlasAPIBaseURL, groupName),
+		fmt.Sprintf(url),
 		nil,
 		true,
 	)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusNotFound {
-			return nil, fmt.Errorf("no project found with name %s", groupName)
+			return fmt.Errorf(notFoundMsg)
 		}
-		return nil, fmt.Errorf("failed to fetch available Project IDs: %s", resp.Status)
+		return fmt.Errorf("%s: %s", failedMsg, resp.Status)
 	}
 
 	dec := json.NewDecoder(resp.Body)
-	var groupResponse Group
-	if err := dec.Decode(&groupResponse); err != nil {
-		return nil, err
+	if err := dec.Decode(response); err != nil {
+		return err
 	}
-
-	return &groupResponse, nil
+	return nil
 }
 
 func (client *simpleClient) do(

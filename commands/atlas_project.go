@@ -97,6 +97,10 @@ func (ac *AtlasProjectCommand) run(flagList bool, flagProjectID string) error {
 		}
 		fmt.Println(group.Name)
 		fmt.Println(group.ID)
+		fmt.Println(group.OrgID)
+		fmt.Println(group.ReplicaSetCount)
+		fmt.Println(group.ShardCount)
+
 		return nil
 	}
 
