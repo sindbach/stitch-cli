@@ -3,14 +3,14 @@ package commands
 import (
 	"fmt"
 
-	u "github.com/sindbach/stitch-cli/user"
-
+	tm "github.com/buger/goterm"
 	"github.com/mitchellh/cli"
+	u "github.com/sindbach/stitch-cli/user"
 )
 
 const (
-	flagList      = "list"
-	flagProjectID = "project-id"
+	flagProjectList = "list"
+	flagProjectID   = "project-id"
 )
 
 // NewAtlasProjectCommandFactory returns a new cli.CommandFactory given a cli.Ui
@@ -30,8 +30,8 @@ func NewAtlasProjectCommandFactory(ui cli.Ui) cli.CommandFactory {
 type AtlasProjectCommand struct {
 	*BaseCommand
 
-	flagList      bool
-	flagProjectID string
+	flagProjectList bool
+	flagProjectID   string
 }
 
 // Help returns long-form help information for this command
@@ -49,30 +49,39 @@ OPTIONS:
 
 // Synopsis returns a one-liner description for this command
 func (ac *AtlasProjectCommand) Synopsis() string {
-	return `Access Atlas Organizations.`
+	return `Access Atlas Projects.`
 }
 
 // Run executes the command
 func (ac *AtlasProjectCommand) Run(args []string) int {
 	set := ac.NewFlagSet()
 
-	set.BoolVar(&ac.flagList, flagList, false, "")
+	set.BoolVar(&ac.flagProjectList, flagProjectList, false, "")
 	set.StringVar(&ac.flagProjectID, flagProjectID, "", "")
 
 	if err := ac.BaseCommand.run(args); err != nil {
 		ac.UI.Error(err.Error())
 		return 1
 	}
-	if !ac.flagList || ac.flagProjectID == "" {
+	if !ac.flagProjectList && ac.flagProjectID == "" {
 		ac.UI.Error("see --help for more information")
 		return 1
 	}
-	if err := ac.run(ac.flagList, ac.flagProjectID); err != nil {
+	if err := ac.run(ac.flagProjectList, ac.flagProjectID); err != nil {
 		ac.UI.Error(err.Error())
 		return 1
 	}
 
 	return 0
+}
+
+func (ac *AtlasProjectCommand) printOutput(id string, name string, orgid string, replset int, shard int) {
+
+	result := tm.NewTable(0, 5, 5, ' ', 0)
+	fmt.Fprintf(result, "ID\tName\tOrgID\tReplicaSet\tShard\n")
+	fmt.Fprintf(result, "%s\t%s\t%s\t%d\t%d\n", id, name, orgid, replset, shard)
+	tm.Println(result)
+	tm.Flush()
 }
 
 func (ac *AtlasProjectCommand) run(flagList bool, flagProjectID string) error {
@@ -90,28 +99,33 @@ func (ac *AtlasProjectCommand) run(flagList bool, flagProjectID string) error {
 	if err != nil {
 		return err
 	}
+
 	if flagProjectID != "" {
-		group, err := client.GroupByID(flagProjectID)
+		p, err := client.GroupByID(flagProjectID)
 		if err != nil {
 			return fmt.Errorf("failed to list Project info: %s", err)
 		}
-		fmt.Println(group.Name)
-		fmt.Println(group.ID)
-		fmt.Println(group.OrgID)
-		fmt.Println(group.ReplicaSetCount)
-		fmt.Println(group.ShardCount)
 
+		result := tm.NewTable(0, 5, 5, ' ', 0)
+		fmt.Fprintf(result, "ID\tName\tOrgID\tReplicaSet\tShard\n")
+		fmt.Fprintf(result, "%s\t%s\t%s\t%d\t%d\n", p.ID, p.Name, p.OrgID, p.ReplicaSetCount, p.ShardCount)
+		tm.Println(result)
+		tm.Flush()
 		return nil
 	}
 
-	groups, err := client.Groups()
+	ps, err := client.Groups()
 	if err != nil {
 		return fmt.Errorf("failed to list Projects: %s", err)
 	}
 
-	for _, group := range groups {
-		fmt.Println(group.Name)
-		fmt.Println(group.ID)
+	result := tm.NewTable(0, 5, 5, ' ', 0)
+	fmt.Fprintf(result, "ID\tName\tOrgID\tReplicaSet\tShard\n")
+
+	for _, p := range ps {
+		fmt.Fprintf(result, "%s\t%s\t%s\t%d\t%d\n", p.ID, p.Name, p.OrgID, p.ReplicaSetCount, p.ShardCount)
 	}
+	tm.Println(result)
+	tm.Flush()
 	return nil
 }

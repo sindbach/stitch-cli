@@ -29,6 +29,19 @@ type Group struct {
 	ShardCount      int    `json:"shardCount"`
 }
 
+type userResponse struct {
+	Results []User `json:"results"`
+}
+
+type User struct {
+	ID        string `json:"id"`
+	Email     string `json:"emailAddress"`
+	Firstname string `json:"firstName"`
+	Lastname  string `json:"lastName"`
+	Username  string `json:"username"`
+	TeamID    string `json:"teamIds"`
+}
+
 type orgResponse struct {
 	Results []Org `json:"results"`
 }
