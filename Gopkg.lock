@@ -8,7 +8,6 @@
     "api",
     "api/mdbcloud",
     "auth",
-    "commands",
     "models",
     "storage",
     "user",
@@ -42,6 +41,14 @@
   pruneopts = ""
   revision = "2ee87856327ba09384cabd113bc6b5d174e9ec0f"
   version = "v3.5.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:ac9ed872494f97638f0ac901d7e195df5f0f1fd73028d89e4e84167cc7141bb0"
+  name = "github.com/buger/goterm"
+  packages = ["."]
+  pruneopts = ""
+  revision = "6d19e6a8df12fdfc44a90a24b677a6d04a80b91f"
 
 [[projects]]
   branch = "master"
@@ -166,14 +173,11 @@
   input-imports = [
     "github.com/10gen/stitch-cli/api",
     "github.com/10gen/stitch-cli/api/mdbcloud",
-    "github.com/10gen/stitch-cli/auth",
-    "github.com/10gen/stitch-cli/commands",
     "github.com/10gen/stitch-cli/models",
-    "github.com/10gen/stitch-cli/storage",
     "github.com/10gen/stitch-cli/user",
-    "github.com/10gen/stitch-cli/utils",
     "github.com/10gen/stitch-cli/utils/test",
     "github.com/blang/semver",
+    "github.com/buger/goterm",
     "github.com/edaniels/digest",
     "github.com/mattn/go-isatty",
     "github.com/mitchellh/cli",
