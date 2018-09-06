@@ -16,12 +16,12 @@ import (
 
 var errCommonServerError = fmt.Errorf("an unexpected server error has occurred")
 
-type groupResponse struct {
-	Results []Group `json:"results"`
+type projectResponse struct {
+	Results []Project `json:"results"`
 }
 
-// Group represents a mongodb atlas group
-type Group struct {
+// Project represents a mongodb atlas project
+type Project struct {
 	ID              string `json:"id"`
 	Name            string `json:"name"`
 	OrgID           string `json:"orgId"`
@@ -34,12 +34,18 @@ type userResponse struct {
 }
 
 type User struct {
-	ID        string `json:"id"`
-	Email     string `json:"emailAddress"`
-	Firstname string `json:"firstName"`
-	Lastname  string `json:"lastName"`
-	Username  string `json:"username"`
-	TeamID    string `json:"teamIds"`
+	ID        string     `json:"id"`
+	Email     string     `json:"emailAddress"`
+	Firstname string     `json:"firstName"`
+	Lastname  string     `json:"lastName"`
+	Username  string     `json:"username"`
+	Roles     []UserRole `json:"roles"`
+}
+
+type UserRole struct {
+	OrgID     string `json:"orgId"`
+	ProjectID string `json:"groupId"`
+	Name      string `json:"roleName"`
 }
 
 type orgResponse struct {
@@ -56,10 +62,11 @@ type Org struct {
 type Client interface {
 	WithAuth(username string, apiKey string) Client
 	Orgs() ([]Org, error)
-	Groups() ([]Group, error)
-	GroupByID(string) (*Group, error)
-	GroupByName(string) (*Group, error)
-	DeleteDatabaseUser(groupID string, username string) error
+	UserByName(string) (*User, error)
+	Projects() ([]Project, error)
+	ProjectByID(string) (*Project, error)
+	ProjectByName(string) (*Project, error)
+	DeleteDatabaseUser(projectID string, username string) error
 }
 
 type simpleClient struct {
@@ -107,8 +114,8 @@ func (client *simpleClient) Orgs() ([]Org, error) {
 	return orgResponse.Results, nil
 }
 
-// Groups returns all available Groups for the user
-func (client *simpleClient) Groups() ([]Group, error) {
+// Projects returns all available Projects for the user
+func (client *simpleClient) Projects() ([]Project, error) {
 	resp, err := client.do(
 		http.MethodGet,
 		fmt.Sprintf("%s/api/public/v1.0/groups", client.atlasAPIBaseURL),
@@ -125,42 +132,56 @@ func (client *simpleClient) Groups() ([]Group, error) {
 	}
 
 	dec := json.NewDecoder(resp.Body)
-	var groupResponse groupResponse
-	if err := dec.Decode(&groupResponse); err != nil {
+	var projectResponse projectResponse
+	if err := dec.Decode(&projectResponse); err != nil {
 		return nil, err
 	}
 
-	return groupResponse.Results, nil
+	return projectResponse.Results, nil
 }
 
-// GroupByID returns info of a Group for the user
-func (client *simpleClient) GroupByID(groupID string) (*Group, error) {
-	var groupResponse Group
+// ProjectByID returns info of a Project for the user
+func (client *simpleClient) ProjectByID(projectID string) (*Project, error) {
+	var projectResponse Project
 	err := client.SingleFetch(
-		fmt.Sprintf("%s/api/public/v1.0/groups/%s", client.atlasAPIBaseURL, groupID),
-		fmt.Sprintf("failed to find information for ProjectID [%s]", groupID),
-		fmt.Sprintf("failed to fetch ProjectID [%s]", groupID),
-		&groupResponse,
+		fmt.Sprintf("%s/api/public/v1.0/groups/%s", client.atlasAPIBaseURL, projectID),
+		fmt.Sprintf("failed to find information for ProjectID [%s]", projectID),
+		fmt.Sprintf("failed to fetch ProjectID [%s]", projectID),
+		&projectResponse,
 	)
 	if err != nil {
 		return nil, fmt.Errorf(err.Error())
 	}
 
-	return &groupResponse, nil
+	return &projectResponse, nil
 }
 
-func (client *simpleClient) GroupByName(groupName string) (*Group, error) {
-	var groupResponse Group
+func (client *simpleClient) ProjectByName(projectName string) (*Project, error) {
+	var projectResponse Project
 	err := client.SingleFetch(
-		fmt.Sprintf("%s/api/public/v1.0/groups/byName/%s", client.atlasAPIBaseURL, groupName),
-		fmt.Sprintf("failed to find Project by name [%s]", groupName),
-		fmt.Sprintf("failed to fetch Project by name [%s]", groupName),
-		&groupResponse,
+		fmt.Sprintf("%s/api/public/v1.0/groups/byName/%s", client.atlasAPIBaseURL, projectName),
+		fmt.Sprintf("failed to find Project by name [%s]", projectName),
+		fmt.Sprintf("failed to fetch Project by name [%s]", projectName),
+		&projectResponse,
 	)
 	if err != nil {
 		return nil, fmt.Errorf(err.Error())
 	}
-	return &groupResponse, nil
+	return &projectResponse, nil
+}
+
+func (client *simpleClient) UserByName(userName string) (*User, error) {
+	var userResponse User
+	err := client.SingleFetch(
+		fmt.Sprintf("%s/api/atlas/v1.0/users/byName/%s", client.atlasAPIBaseURL, userName),
+		fmt.Sprintf("failed to find User by name [%s]", userName),
+		fmt.Sprintf("failed to fetch User by name [%s]", userName),
+		&userResponse,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(err.Error())
+	}
+	return &userResponse, nil
 }
 
 func (client *simpleClient) SingleFetch(url string, notFoundMsg string, failedMsg string, response interface{}) error {
@@ -239,12 +260,12 @@ func (client *simpleClient) do(
 }
 
 // DeleteDatabaseUser deletes the database user with the provided username
-func (client *simpleClient) DeleteDatabaseUser(groupID, username string) error {
+func (client *simpleClient) DeleteDatabaseUser(projectID, username string) error {
 	resp, err := client.do(
 		http.MethodDelete,
 		fmt.Sprintf("%s/api/atlas/v1.0/groups/%s/databaseUsers/admin/%s",
 			client.atlasAPIBaseURL,
-			groupID,
+			projectID,
 			username,
 		),
 		nil,

@@ -101,7 +101,7 @@ func (ac *AtlasProjectCommand) run(flagList bool, flagProjectID string) error {
 	}
 
 	if flagProjectID != "" {
-		p, err := client.GroupByID(flagProjectID)
+		p, err := client.ProjectByID(flagProjectID)
 		if err != nil {
 			return fmt.Errorf("failed to list Project info: %s", err)
 		}
@@ -114,7 +114,7 @@ func (ac *AtlasProjectCommand) run(flagList bool, flagProjectID string) error {
 		return nil
 	}
 
-	ps, err := client.Groups()
+	ps, err := client.Projects()
 	if err != nil {
 		return fmt.Errorf("failed to list Projects: %s", err)
 	}

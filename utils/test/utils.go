@@ -273,8 +273,8 @@ func (msc *MockStitchClient) FetchAppByClientAppID(clientAppID string) (*models.
 // MockMDBClient satisfies a mdbcloud.Client
 type MockMDBClient struct {
 	WithAuthFn           func(username, apiKey string) mdbcloud.Client
-	GroupsFn             func() ([]mdbcloud.Group, error)
-	GroupByNameFn        func(string) (*mdbcloud.Group, error)
+	GroupsFn             func() ([]mdbcloud.Project, error)
+	GroupByNameFn        func(string) (*mdbcloud.Project, error)
 	DeleteDatabaseUserFn func(groupId, username string) error
 }
 
@@ -284,7 +284,7 @@ func (mmc MockMDBClient) WithAuth(username, apiKey string) mdbcloud.Client {
 }
 
 // Groups will return a list of groups available
-func (mmc *MockMDBClient) Groups() ([]mdbcloud.Group, error) {
+func (mmc *MockMDBClient) Groups() ([]mdbcloud.Project, error) {
 	if mmc.GroupsFn != nil {
 		return mmc.GroupsFn()
 	}
@@ -292,7 +292,7 @@ func (mmc *MockMDBClient) Groups() ([]mdbcloud.Group, error) {
 }
 
 // GroupByName will look up the Group given a name
-func (mmc *MockMDBClient) GroupByName(groupName string) (*mdbcloud.Group, error) {
+func (mmc *MockMDBClient) GroupByName(groupName string) (*mdbcloud.Project, error) {
 	if mmc.GroupByNameFn != nil {
 		return mmc.GroupByNameFn(groupName)
 	}

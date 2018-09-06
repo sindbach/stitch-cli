@@ -259,57 +259,57 @@ func (ic *ImportCommand) resolveGroupID() (string, error) {
 		return "", fmt.Errorf("failed to find Project: %s", err)
 	}
 
-	groups, err := atlasClient.Groups()
+	projects, err := atlasClient.Projects()
 	if err != nil {
 		return "", fmt.Errorf("failed to find Project: %s", err)
 	}
 
-	groupsByName := map[string]string{}
-	for _, group := range groups {
-		groupsByName[group.Name] = group.ID
+	projectsByName := map[string]string{}
+	for _, project := range projects {
+		projectsByName[project.Name] = project.ID
 	}
 
-	if len(groupsByName) == 0 {
+	if len(projectsByName) == 0 {
 		return "", errors.New("no available Projects")
 	}
 
 	ic.UI.Info("Available Projects:")
 
-	for name, id := range groupsByName {
+	for name, id := range projectsByName {
 		ic.UI.Info(fmt.Sprintf("%s - %s", name, id))
 	}
 
-	var groupID string
+	var projectID string
 	for {
-		projectResponse, err := ic.Ask("Atlas Project Name or ID", groups[0].Name)
+		projectResponse, err := ic.Ask("Atlas Project Name or ID", projects[0].Name)
 		if err != nil {
 			return "", err
 		}
 
 		if isObjectIDHex(projectResponse) {
-			groupID = projectResponse
+			projectID = projectResponse
 			break
 		}
 
-		groupID = groupsByName[projectResponse]
-		if groupID != "" {
+		projectID = projectsByName[projectResponse]
+		if projectID != "" {
 			break
 		}
 
-		groupFromName, err := atlasClient.GroupByName(projectResponse)
+		projectFromName, err := atlasClient.ProjectByName(projectResponse)
 		if err != nil {
 			return "", err
 		}
 
-		groupID = groupFromName.ID
-		if groupID != "" {
+		projectID = projectFromName.ID
+		if projectID != "" {
 			break
 		}
 
 		ic.UI.Info("Could not understand response, please try again")
 	}
 
-	return groupID, nil
+	return projectID, nil
 }
 
 func (ic *ImportCommand) askCreateEmptyApp(query string, defaultAppName string, stitchClient api.StitchClient) (*models.App, bool, error) {
