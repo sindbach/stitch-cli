@@ -95,5 +95,21 @@ func (ac *AtlasUserCommand) run(flagUserList bool, flagProjectID string) error {
 		return u.ErrNotLoggedIn
 	}
 
+	client, err := ac.AtlasClient()
+	if err != nil {
+		return err
+	}
+
+	u, err := client.UserByName(user.Username)
+	if err != nil {
+		return fmt.Errorf("failed to list User info: %s", err)
+	}
+	fmt.Println(u.ID)
+	fmt.Println(u.Email)
+	fmt.Println(u.Firstname)
+	fmt.Println(u.Lastname)
+	fmt.Println(u.Username)
+	fmt.Println(u.Roles)
+
 	return nil
 }
