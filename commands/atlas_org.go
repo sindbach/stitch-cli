@@ -2,7 +2,9 @@ package commands
 
 import (
 	"fmt"
+	"strings"
 
+	tm "github.com/buger/goterm"
 	u "github.com/sindbach/stitch-cli/user"
 
 	"github.com/mitchellh/cli"
@@ -25,7 +27,8 @@ func NewAtlasOrgCommandFactory(ui cli.Ui) cli.CommandFactory {
 type AtlasOrgCommand struct {
 	*BaseCommand
 
-	flagList bool
+	flagOrgList bool
+	flagOrgID   string
 }
 
 // Help returns long-form help information for this command
@@ -35,6 +38,8 @@ func (ec *AtlasOrgCommand) Help() string {
 OPTIONS:
   --list
 	Get all Atlas organizations the authenticated user has access to.
+  --org-id [string]
+    Get an Atlas organization for a specific ID.
 ` +
 		ec.BaseCommand.Help()
 }
@@ -48,22 +53,27 @@ func (ec *AtlasOrgCommand) Synopsis() string {
 func (ec *AtlasOrgCommand) Run(args []string) int {
 	set := ec.NewFlagSet()
 
-	set.BoolVar(&ec.flagList, "list", false, "")
+	set.BoolVar(&ec.flagOrgList, "list", false, "")
+	set.StringVar(&ec.flagOrgID, "org-id", "", "")
 
 	if err := ec.BaseCommand.run(args); err != nil {
 		ec.UI.Error(err.Error())
 		return 1
 	}
 
-	if err := ec.run(); err != nil {
-		ec.UI.Error(err.Error())
+	if !ec.flagOrgList && ec.flagOrgID == "" {
+		ec.UI.Error("see --help for more information")
 		return 1
 	}
 
+	if err := ec.run(ec.flagOrgList, ec.flagOrgID); err != nil {
+		ec.UI.Error(err.Error())
+		return 1
+	}
 	return 0
 }
 
-func (ec *AtlasOrgCommand) run() error {
+func (ec *AtlasOrgCommand) run(flagList bool, flagOrgID string) error {
 
 	user, err := ec.User()
 	if err != nil {
@@ -79,15 +89,38 @@ func (ec *AtlasOrgCommand) run() error {
 		return err
 	}
 
-	orgs, err := ac.Orgs()
+	if flagOrgID != "" {
+		o, err := ac.OrgByID(flagOrgID)
+		if err != nil {
+			return fmt.Errorf("%s", err)
+		}
+		result := tm.NewTable(0, 5, 5, ' ', 0)
+		fmt.Fprintf(result, "ID\tName\n")
+		fmt.Fprintf(result, "%s\t%s\n", o.ID, o.Name)
+		tm.Println(result)
+		tm.Flush()
+		return nil
+	}
+
+	u, err := ac.UserByName(user.Username)
 	if err != nil {
-		return fmt.Errorf("failed to list Organizations: %s", err)
+		return fmt.Errorf("failed to list User info: %s", err)
 	}
 
-	for _, org := range orgs {
-		fmt.Println(org.Name)
-		fmt.Println(org.ID)
+	result := tm.NewTable(0, 5, 5, ' ', 0)
+	fmt.Fprintf(result, "ID\tName\tRole\n")
 
+	for _, role := range u.Roles {
+		if strings.HasPrefix(role.Name, "ORG_") {
+			org, err := ac.OrgByID(role.OrgID)
+			if err != nil {
+				fmt.Println("Warning:", err)
+				continue
+			}
+			fmt.Fprintf(result, "%s\t%s\t%s\n", org.ID, org.Name, role.Name)
+		}
 	}
+	tm.Println(result)
+	tm.Flush()
 	return nil
 }

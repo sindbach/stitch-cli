@@ -8,11 +8,6 @@ import (
 	u "github.com/sindbach/stitch-cli/user"
 )
 
-const (
-	flagUserList = "list"
-	flagUserID   = "user-id"
-)
-
 // NewAtlasUserCommandFactory returns a new cli.CommandFactory given a cli.Ui
 func NewAtlasUserCommandFactory(ui cli.Ui) cli.CommandFactory {
 	return func() (cli.Command, error) {
@@ -30,8 +25,8 @@ func NewAtlasUserCommandFactory(ui cli.Ui) cli.CommandFactory {
 type AtlasUserCommand struct {
 	*BaseCommand
 
-	flagUserList  bool
-	flagProjectID string
+	flagUserList bool
+	flagUserID   string
 }
 
 // Help returns long-form help information for this command
@@ -56,18 +51,18 @@ func (ac *AtlasUserCommand) Synopsis() string {
 func (ac *AtlasUserCommand) Run(args []string) int {
 	set := ac.NewFlagSet()
 
-	set.BoolVar(&ac.flagUserList, flagUserList, false, "")
-	set.StringVar(&ac.flagProjectID, flagProjectID, "", "")
+	set.BoolVar(&ac.flagUserList, "list", false, "")
+	set.StringVar(&ac.flagUserID, "user-id", "", "")
 
 	if err := ac.BaseCommand.run(args); err != nil {
 		ac.UI.Error(err.Error())
 		return 1
 	}
-	if !ac.flagUserList && ac.flagProjectID == "" {
+	if !ac.flagUserList && ac.flagUserID == "" {
 		ac.UI.Error("see --help for more information")
 		return 1
 	}
-	if err := ac.run(ac.flagUserList, ac.flagProjectID); err != nil {
+	if err := ac.run(ac.flagUserList, ac.flagUserID); err != nil {
 		ac.UI.Error(err.Error())
 		return 1
 	}

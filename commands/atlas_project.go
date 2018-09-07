@@ -8,11 +8,6 @@ import (
 	u "github.com/sindbach/stitch-cli/user"
 )
 
-const (
-	flagProjectList = "list"
-	flagProjectID   = "project-id"
-)
-
 // NewAtlasProjectCommandFactory returns a new cli.CommandFactory given a cli.Ui
 func NewAtlasProjectCommandFactory(ui cli.Ui) cli.CommandFactory {
 	return func() (cli.Command, error) {
@@ -42,7 +37,7 @@ OPTIONS:
   --list
 	Get all Atlas projects the authenticated user has access to.
   --project-id [string]
-	The Atlas Project ID.
+	Get an Atlas project using a specific ID.
 ` +
 		ac.BaseCommand.Help()
 }
@@ -56,8 +51,8 @@ func (ac *AtlasProjectCommand) Synopsis() string {
 func (ac *AtlasProjectCommand) Run(args []string) int {
 	set := ac.NewFlagSet()
 
-	set.BoolVar(&ac.flagProjectList, flagProjectList, false, "")
-	set.StringVar(&ac.flagProjectID, flagProjectID, "", "")
+	set.BoolVar(&ac.flagProjectList, "list", false, "")
+	set.StringVar(&ac.flagProjectID, "project-id", "", "")
 
 	if err := ac.BaseCommand.run(args); err != nil {
 		ac.UI.Error(err.Error())
