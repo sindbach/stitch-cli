@@ -62,6 +62,7 @@ type Org struct {
 type Client interface {
 	WithAuth(username string, apiKey string) Client
 	Orgs() ([]Org, error)
+	OrgByID(string) (*Org, error)
 	UserByName(string) (*User, error)
 	Projects() ([]Project, error)
 	ProjectByID(string) (*Project, error)
@@ -114,6 +115,20 @@ func (client *simpleClient) Orgs() ([]Org, error) {
 	return orgResponse.Results, nil
 }
 
+func (client *simpleClient) OrgByID(id string) (*Org, error) {
+	var response Org
+	err := client.SingleFetch(
+		fmt.Sprintf("%s/api/atlas/v1.0/orgs/%s", client.atlasAPIBaseURL, id),
+		fmt.Sprintf("failed to find Org by ID [%s]", id),
+		fmt.Sprintf("failed to fetch Org by ID [%s]", id),
+		&response,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(err.Error())
+	}
+	return &response, nil
+}
+
 // Projects returns all available Projects for the user
 func (client *simpleClient) Projects() ([]Project, error) {
 	resp, err := client.do(
@@ -142,46 +157,46 @@ func (client *simpleClient) Projects() ([]Project, error) {
 
 // ProjectByID returns info of a Project for the user
 func (client *simpleClient) ProjectByID(projectID string) (*Project, error) {
-	var projectResponse Project
+	var response Project
 	err := client.SingleFetch(
 		fmt.Sprintf("%s/api/public/v1.0/groups/%s", client.atlasAPIBaseURL, projectID),
 		fmt.Sprintf("failed to find information for ProjectID [%s]", projectID),
 		fmt.Sprintf("failed to fetch ProjectID [%s]", projectID),
-		&projectResponse,
+		&response,
 	)
 	if err != nil {
 		return nil, fmt.Errorf(err.Error())
 	}
 
-	return &projectResponse, nil
+	return &response, nil
 }
 
 func (client *simpleClient) ProjectByName(projectName string) (*Project, error) {
-	var projectResponse Project
+	var response Project
 	err := client.SingleFetch(
 		fmt.Sprintf("%s/api/public/v1.0/groups/byName/%s", client.atlasAPIBaseURL, projectName),
 		fmt.Sprintf("failed to find Project by name [%s]", projectName),
 		fmt.Sprintf("failed to fetch Project by name [%s]", projectName),
-		&projectResponse,
+		&response,
 	)
 	if err != nil {
 		return nil, fmt.Errorf(err.Error())
 	}
-	return &projectResponse, nil
+	return &response, nil
 }
 
 func (client *simpleClient) UserByName(userName string) (*User, error) {
-	var userResponse User
+	var response User
 	err := client.SingleFetch(
 		fmt.Sprintf("%s/api/atlas/v1.0/users/byName/%s", client.atlasAPIBaseURL, userName),
 		fmt.Sprintf("failed to find User by name [%s]", userName),
 		fmt.Sprintf("failed to fetch User by name [%s]", userName),
-		&userResponse,
+		&response,
 	)
 	if err != nil {
 		return nil, fmt.Errorf(err.Error())
 	}
-	return &userResponse, nil
+	return &response, nil
 }
 
 func (client *simpleClient) SingleFetch(url string, notFoundMsg string, failedMsg string, response interface{}) error {
