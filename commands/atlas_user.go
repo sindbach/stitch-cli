@@ -84,6 +84,15 @@ func (ac *AtlasUserCommand) printOutput(id string, name string, orgid string, re
 	tm.Flush()
 }
 
+func (ac *AtlasProjectCommand) printOutput(id string, name string, orgid string, replset int, shard int) {
+
+	result := tm.NewTable(0, 5, 5, ' ', 0)
+	fmt.Fprintf(result, "ID\tName\tOrgID\tReplicaSet\tShard\n")
+	fmt.Fprintf(result, "%s\t%s\t%s\t%d\t%d\n", id, name, orgid, replset, shard)
+	tm.Println(result)
+	tm.Flush()
+}
+
 func (ac *AtlasUserCommand) run(flagUserList bool, flagProjectID string) error {
 
 	user, err := ac.User()
@@ -104,12 +113,18 @@ func (ac *AtlasUserCommand) run(flagUserList bool, flagProjectID string) error {
 	if err != nil {
 		return fmt.Errorf("failed to list User info: %s", err)
 	}
-	fmt.Println(u.ID)
-	fmt.Println(u.Email)
-	fmt.Println(u.Firstname)
-	fmt.Println(u.Lastname)
-	fmt.Println(u.Username)
-	fmt.Println(u.Roles)
 
+	result := tm.NewTable(0, 5, 5, ' ', 0)
+	fmt.Fprintf(result, "ID\tUsername\tEmail\n")
+	fmt.Fprintf(result, "%s\t%s\t%s\n", u.ID, u.Username, u.Email)
+	tm.Println(result)
+
+	roleTable := tm.NewTable(0, 5, 5, ' ', 0)
+	fmt.Fprintf(roleTable, "Name\tOrgID\tProjectID\n")
+	for _, role := range u.Roles {
+		fmt.Fprintf(roleTable, "%s\t%s\t%s\n", role.Name, role.OrgID, role.ProjectID)
+	}
+	tm.Println(roleTable)
+	tm.Flush()
 	return nil
 }

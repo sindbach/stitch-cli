@@ -75,15 +75,6 @@ func (ac *AtlasProjectCommand) Run(args []string) int {
 	return 0
 }
 
-func (ac *AtlasProjectCommand) printOutput(id string, name string, orgid string, replset int, shard int) {
-
-	result := tm.NewTable(0, 5, 5, ' ', 0)
-	fmt.Fprintf(result, "ID\tName\tOrgID\tReplicaSet\tShard\n")
-	fmt.Fprintf(result, "%s\t%s\t%s\t%d\t%d\n", id, name, orgid, replset, shard)
-	tm.Println(result)
-	tm.Flush()
-}
-
 func (ac *AtlasProjectCommand) run(flagList bool, flagProjectID string) error {
 
 	user, err := ac.User()
