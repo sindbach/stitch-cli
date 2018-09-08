@@ -16,19 +16,6 @@ import (
 
 var errCommonServerError = fmt.Errorf("an unexpected server error has occurred")
 
-type projectResponse struct {
-	Results []Project `json:"results"`
-}
-
-// Project represents a mongodb atlas project
-type Project struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	OrgID           string `json:"orgId"`
-	ReplicaSetCount int    `json:"replicaSetCount"`
-	ShardCount      int    `json:"shardCount"`
-}
-
 type userResponse struct {
 	Results []User `json:"results"`
 }
@@ -58,6 +45,36 @@ type Org struct {
 	Name string `json:"name"`
 }
 
+type projectResponse struct {
+	Results []Project `json:"results"`
+}
+
+// Project represents a mongodb atlas project
+type Project struct {
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	OrgID           string `json:"orgId"`
+	ReplicaSetCount int    `json:"replicaSetCount"`
+	ShardCount      int    `json:"shardCount"`
+}
+
+type processResponse struct {
+	Results []Process `json:"results"`
+}
+
+// Process represents a mongodb atlas process
+type Process struct {
+	ID             string    `json:"id"`
+	Hostname       string    `json:"hostname"`
+	Port           int       `json:"port"`
+	TypeName       string    `json:"typeName"`
+	ReplicasetName string    `json:"replicaSetName"`
+	ShardName      string    `json:"shardName"`
+	Version        string    `json:"version"`
+	Lastping       time.Time `json:"lastPing"`
+	Created        time.Time `json:"created"`
+}
+
 // Client provides access to the MongoDB Cloud Manager APIs
 type Client interface {
 	WithAuth(username string, apiKey string) Client
@@ -67,6 +84,7 @@ type Client interface {
 	Projects() ([]Project, error)
 	ProjectByID(string) (*Project, error)
 	ProjectByName(string) (*Project, error)
+	ProcessByProjectID(string) ([]Process, error)
 	DeleteDatabaseUser(projectID string, username string) error
 }
 
@@ -183,6 +201,20 @@ func (client *simpleClient) ProjectByName(projectName string) (*Project, error) 
 		return nil, fmt.Errorf(err.Error())
 	}
 	return &response, nil
+}
+
+func (client *simpleClient) ProcessByProjectID(projectID string) ([]Process, error) {
+	var response processResponse
+	err := client.SingleFetch(
+		fmt.Sprintf("%s/api/atlas/v1.0/groups/%s/processes", client.atlasAPIBaseURL, projectID),
+		fmt.Sprintf("failed to find processes using Project ID [%s]", projectID),
+		fmt.Sprintf("failed to fetch Project using Project ID [%s]", projectID),
+		&response,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(err.Error())
+	}
+	return response.Results, nil
 }
 
 func (client *simpleClient) UserByName(userName string) (*User, error) {
