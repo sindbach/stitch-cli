@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/sindbach/stitch-cli/utils"
@@ -85,6 +86,7 @@ type Client interface {
 	ProjectByID(string) (*Project, error)
 	ProjectByName(string) (*Project, error)
 	ProcessByProjectID(string) ([]Process, error)
+	LogByProcessID(string, string, string) error
 	DeleteDatabaseUser(projectID string, username string) error
 }
 
@@ -114,6 +116,7 @@ func (client *simpleClient) Orgs() ([]Org, error) {
 		fmt.Sprintf("%s/api/atlas/v1.0/orgs", client.atlasAPIBaseURL),
 		nil,
 		true,
+		0,
 	)
 	if err != nil {
 		return nil, err
@@ -154,6 +157,7 @@ func (client *simpleClient) Projects() ([]Project, error) {
 		fmt.Sprintf("%s/api/public/v1.0/groups", client.atlasAPIBaseURL),
 		nil,
 		true,
+		0,
 	)
 	if err != nil {
 		return nil, err
@@ -217,6 +221,19 @@ func (client *simpleClient) ProcessByProjectID(projectID string) ([]Process, err
 	return response.Results, nil
 }
 
+func (client *simpleClient) LogByProcessID(projectID string, processID string, logType string) error {
+	err := client.SingleDownload(
+		fmt.Sprintf("%s/api/atlas/v1.0/groups/%s/clusters/%s/logs/%s", client.atlasAPIBaseURL, projectID, processID, logType),
+		fmt.Sprintf("failed to find log using Process ID [%s]", processID),
+		fmt.Sprintf("failed to fetch log using Process ID [%s]", processID),
+		fmt.Sprintf("log_%s_%s", processID, logType),
+	)
+	if err != nil {
+		return fmt.Errorf(err.Error())
+	}
+	return nil
+}
+
 func (client *simpleClient) UserByName(userName string) (*User, error) {
 	var response User
 	err := client.SingleFetch(
@@ -231,12 +248,49 @@ func (client *simpleClient) UserByName(userName string) (*User, error) {
 	return &response, nil
 }
 
-func (client *simpleClient) SingleFetch(url string, notFoundMsg string, failedMsg string, response interface{}) error {
+func (client *simpleClient) SingleDownload(url string, notFoundMsg string, failedMsg string, filename string) error {
+	fmt.Println(url)
+	output, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer output.Close()
+
 	resp, err := client.do(
 		http.MethodGet,
 		fmt.Sprintf(url),
 		nil,
 		true,
+		time.Second*300,
+	)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusNotFound {
+			return fmt.Errorf(notFoundMsg)
+		}
+		return fmt.Errorf("%s: %s", failedMsg, resp.Status)
+	}
+	fmt.Println("copying")
+	// Writer the body to file
+	_, err = io.Copy(output, resp.Body)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (client *simpleClient) SingleFetch(url string, notFoundMsg string, failedMsg string, response interface{}) error {
+	fmt.Println(url)
+	resp, err := client.do(
+		http.MethodGet,
+		fmt.Sprintf(url),
+		nil,
+		true,
+		0,
 	)
 	if err != nil {
 		return err
@@ -261,6 +315,7 @@ func (client *simpleClient) do(
 	method, url string, // nolint: unparam
 	body interface{},
 	needAuth bool, // nolint: unparam
+	timeout time.Duration,
 ) (*http.Response, error) {
 
 	var bodyReader io.Reader
@@ -284,7 +339,11 @@ func (client *simpleClient) do(
 	req.Header.Add("User-Agent", "MongoDB-Stitch-CLI")
 
 	cl := http.Client{}
-	cl.Timeout = time.Second * 5
+	if timeout != 0 {
+		cl.Timeout = timeout
+	} else {
+		cl.Timeout = time.Second * 5
+	}
 	if client.transport == nil {
 		if needAuth {
 			return nil, errors.New("expected to have auth context")
@@ -317,6 +376,7 @@ func (client *simpleClient) DeleteDatabaseUser(projectID, username string) error
 		),
 		nil,
 		true,
+		0,
 	)
 	if err != nil {
 		return err

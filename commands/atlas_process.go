@@ -27,6 +27,8 @@ type AtlasProcessCommand struct {
 
 	flagProcessList bool
 	flagProjectID   string
+	flagProcessID   string
+	flagLogType     string
 }
 
 // Help returns long-form help information for this command
@@ -39,9 +41,10 @@ REQUIRED:
 OPTIONS:
   --list
 	Get all Atlas process for a project.
-  --log
-	Get log file given a process ID 
-  
+  --process-id [string]
+    Specify a Process ID
+  --log [string]
+	Get log file given a Process ID. Choices: mongodb, mongos, mongosqld, mongodb-audit-log, mongos-audit-log
 
 ` +
 		ac.BaseCommand.Help()
@@ -58,6 +61,8 @@ func (ac *AtlasProcessCommand) Run(args []string) int {
 
 	set.BoolVar(&ac.flagProcessList, "list", false, "")
 	set.StringVar(&ac.flagProjectID, "project-id", "", "")
+	set.StringVar(&ac.flagProcessID, "process-id", "", "")
+	set.StringVar(&ac.flagLogType, "log", "", "")
 
 	if err := ac.BaseCommand.run(args); err != nil {
 		ac.UI.Error(err.Error())
@@ -67,7 +72,7 @@ func (ac *AtlasProcessCommand) Run(args []string) int {
 		ac.UI.Error("Project ID is required. See --help for more information")
 		return 1
 	}
-	if err := ac.run(ac.flagProjectID); err != nil {
+	if err := ac.run(ac.flagProjectID, ac.flagProcessID, ac.flagLogType); err != nil {
 		ac.UI.Error(err.Error())
 		return 1
 	}
@@ -75,7 +80,7 @@ func (ac *AtlasProcessCommand) Run(args []string) int {
 	return 0
 }
 
-func (ac *AtlasProcessCommand) run(flagProjectID string) error {
+func (ac *AtlasProcessCommand) run(flagProjectID string, flagProcessID string, flagLogType string) error {
 
 	user, err := ac.User()
 	if err != nil {
@@ -89,6 +94,14 @@ func (ac *AtlasProcessCommand) run(flagProjectID string) error {
 	client, err := ac.AtlasClient()
 	if err != nil {
 		return err
+	}
+
+	if flagProcessID != "" && flagLogType != "" {
+		err = client.LogByProcessID(flagProjectID, flagProcessID, fmt.Sprintf("%s.gz", flagLogType))
+		if err != nil {
+			return fmt.Errorf("failed to fetch Log: %s", err)
+		}
+		return nil
 	}
 
 	ps, err := client.ProcessByProjectID(flagProjectID)
