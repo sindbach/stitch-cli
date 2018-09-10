@@ -27,8 +27,8 @@ func NewAtlasOrgCommandFactory(ui cli.Ui) cli.CommandFactory {
 type AtlasOrgCommand struct {
 	*BaseCommand
 
-	flagOrgList bool
-	flagOrgID   string
+	flagOrgList   bool
+	flagProjectID string
 }
 
 // Help returns long-form help information for this command
@@ -38,7 +38,7 @@ func (ec *AtlasOrgCommand) Help() string {
 OPTIONS:
   --list
 	Get all Atlas organizations the authenticated user has access to.
-  --org-id [string]
+  --project-id [string]
     Get an Atlas organization for a specific ID.
 ` +
 		ec.BaseCommand.Help()
@@ -54,26 +54,26 @@ func (ec *AtlasOrgCommand) Run(args []string) int {
 	set := ec.NewFlagSet()
 
 	set.BoolVar(&ec.flagOrgList, "list", false, "")
-	set.StringVar(&ec.flagOrgID, "org-id", "", "")
+	set.StringVar(&ec.flagProjectID, "project-id", "", "")
 
 	if err := ec.BaseCommand.run(args); err != nil {
 		ec.UI.Error(err.Error())
 		return 1
 	}
 
-	if !ec.flagOrgList && ec.flagOrgID == "" {
+	if !ec.flagOrgList && ec.flagProjectID == "" {
 		ec.UI.Error("see --help for more information")
 		return 1
 	}
 
-	if err := ec.run(ec.flagOrgList, ec.flagOrgID); err != nil {
+	if err := ec.run(ec.flagOrgList, ec.flagProjectID); err != nil {
 		ec.UI.Error(err.Error())
 		return 1
 	}
 	return 0
 }
 
-func (ec *AtlasOrgCommand) run(flagList bool, flagOrgID string) error {
+func (ec *AtlasOrgCommand) run(flagList bool, flagProjectID string) error {
 
 	user, err := ec.User()
 	if err != nil {
@@ -89,14 +89,16 @@ func (ec *AtlasOrgCommand) run(flagList bool, flagOrgID string) error {
 		return err
 	}
 
-	if flagOrgID != "" {
-		o, err := ac.OrgByID(flagOrgID)
+	if flagProjectID != "" {
+		ps, err := ac.ProjectByOrgID(flagProjectID)
 		if err != nil {
 			return fmt.Errorf("%s", err)
 		}
 		result := tm.NewTable(0, 5, 5, ' ', 0)
-		fmt.Fprintf(result, "ID\tName\n")
-		fmt.Fprintf(result, "%s\t%s\n", o.ID, o.Name)
+		fmt.Fprintf(result, "ID\tName\tReplicaSetCount\tShardCount\n")
+		for _, p := range ps {
+			fmt.Fprintf(result, "%s\t%s\t%d\t%d\n", p.ID, p.Name, p.ReplicaSetCount, p.ShardCount)
+		}
 		tm.Println(result)
 		tm.Flush()
 		return nil

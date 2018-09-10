@@ -83,6 +83,7 @@ type Client interface {
 	OrgByID(string) (*Org, error)
 	UserByName(string) (*User, error)
 	Projects() ([]Project, error)
+	ProjectByOrgID(string) ([]Project, error)
 	ProjectByID(string) (*Project, error)
 	ProjectByName(string) (*Project, error)
 	ProcessByProjectID(string) ([]Process, error)
@@ -193,6 +194,20 @@ func (client *simpleClient) ProjectByID(projectID string) (*Project, error) {
 	return &response, nil
 }
 
+func (client *simpleClient) ProjectByOrgID(orgID string) ([]Project, error) {
+	var response projectResponse
+	err := client.SingleFetch(
+		fmt.Sprintf("%s/api/atlas/v1.0/orgs/%s/groups", client.atlasAPIBaseURL, orgID),
+		fmt.Sprintf("failed to find Projects using Org ID [%s]", orgID),
+		fmt.Sprintf("failed to fetch Projects using Org ID [%s]", orgID),
+		&response,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(err.Error())
+	}
+	return response.Results, nil
+}
+
 func (client *simpleClient) ProjectByName(projectName string) (*Project, error) {
 	var response Project
 	err := client.SingleFetch(
@@ -249,7 +264,6 @@ func (client *simpleClient) UserByName(userName string) (*User, error) {
 }
 
 func (client *simpleClient) SingleDownload(url string, notFoundMsg string, failedMsg string, filename string) error {
-	fmt.Println(url)
 	output, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -284,7 +298,6 @@ func (client *simpleClient) SingleDownload(url string, notFoundMsg string, faile
 }
 
 func (client *simpleClient) SingleFetch(url string, notFoundMsg string, failedMsg string, response interface{}) error {
-	fmt.Println(url)
 	resp, err := client.do(
 		http.MethodGet,
 		fmt.Sprintf(url),
