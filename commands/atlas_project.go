@@ -27,6 +27,7 @@ type AtlasProjectCommand struct {
 
 	flagProjectList bool
 	flagProjectID   string
+	flagOrgID       string
 }
 
 // Help returns long-form help information for this command
@@ -37,6 +38,8 @@ OPTIONS:
   --list
 	Get all Atlas projects the authenticated user has access to.
   --project-id [string]
+	Get an Atlas project using a specific ID.
+  --org-id [string]
 	Get an Atlas project using a specific ID.
 ` +
 		ac.BaseCommand.Help()
@@ -53,16 +56,17 @@ func (ac *AtlasProjectCommand) Run(args []string) int {
 
 	set.BoolVar(&ac.flagProjectList, "list", false, "")
 	set.StringVar(&ac.flagProjectID, "project-id", "", "")
+	set.StringVar(&ac.flagOrgID, "org-id", "", "")
 
 	if err := ac.BaseCommand.run(args); err != nil {
 		ac.UI.Error(err.Error())
 		return 1
 	}
-	if !ac.flagProjectList && ac.flagProjectID == "" {
+	if !ac.flagProjectList && ac.flagProjectID == "" && ac.flagOrgID == "" {
 		ac.UI.Error("see --help for more information")
 		return 1
 	}
-	if err := ac.run(ac.flagProjectList, ac.flagProjectID); err != nil {
+	if err := ac.run(ac.flagProjectList, ac.flagOrgID, ac.flagProjectID); err != nil {
 		ac.UI.Error(err.Error())
 		return 1
 	}
@@ -70,7 +74,7 @@ func (ac *AtlasProjectCommand) Run(args []string) int {
 	return 0
 }
 
-func (ac *AtlasProjectCommand) run(flagList bool, flagProjectID string) error {
+func (ac *AtlasProjectCommand) run(flagList bool, flagOrgID string, flagProjectID string) error {
 
 	user, err := ac.User()
 	if err != nil {
@@ -86,6 +90,21 @@ func (ac *AtlasProjectCommand) run(flagList bool, flagProjectID string) error {
 		return err
 	}
 
+	if flagOrgID != "" {
+		ps, err := client.ProjectByOrgID(flagOrgID)
+		if err != nil {
+			return fmt.Errorf("%s", err)
+		}
+		result := tm.NewTable(0, 5, 5, ' ', 0)
+		fmt.Fprintf(result, "ProjectID\tName\tReplicaSetCount\tShardCount\n")
+		for _, p := range ps {
+			fmt.Fprintf(result, "%s\t%s\t%d\t%d\n", p.ID, p.Name, p.ReplicaSetCount, p.ShardCount)
+		}
+		tm.Println(result)
+		tm.Flush()
+		return nil
+	}
+
 	if flagProjectID != "" {
 		p, err := client.ProjectByID(flagProjectID)
 		if err != nil {
@@ -93,7 +112,7 @@ func (ac *AtlasProjectCommand) run(flagList bool, flagProjectID string) error {
 		}
 
 		result := tm.NewTable(0, 5, 5, ' ', 0)
-		fmt.Fprintf(result, "ID\tName\tOrgID\tReplicaSet\tShard\n")
+		fmt.Fprintf(result, "ProjectID\tName\tOrgID\tReplicaSet\tShard\n")
 		fmt.Fprintf(result, "%s\t%s\t%s\t%d\t%d\n", p.ID, p.Name, p.OrgID, p.ReplicaSetCount, p.ShardCount)
 		tm.Println(result)
 		tm.Flush()
@@ -106,7 +125,7 @@ func (ac *AtlasProjectCommand) run(flagList bool, flagProjectID string) error {
 	}
 
 	result := tm.NewTable(0, 5, 5, ' ', 0)
-	fmt.Fprintf(result, "ID\tName\tOrgID\tReplicaSet\tShard\n")
+	fmt.Fprintf(result, "ProjectID\tName\tOrgID\tReplicaSet\tShard\n")
 
 	for _, p := range ps {
 		fmt.Fprintf(result, "%s\t%s\t%s\t%d\t%d\n", p.ID, p.Name, p.OrgID, p.ReplicaSetCount, p.ShardCount)

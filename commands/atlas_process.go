@@ -110,10 +110,10 @@ func (ac *AtlasProcessCommand) run(flagProjectID string, flagProcessID string, f
 	}
 
 	result := tm.NewTable(0, 5, 5, ' ', 0)
-	fmt.Fprintf(result, "ID\tReplicaSet\tVersion\tType\tLastping\n")
+	fmt.Fprintf(result, "Hostname\tReplicaSet\tVersion\tType\tLastping\n")
 
 	for _, p := range ps {
-		fmt.Fprintf(result, "%s\t%s\t%s\t%s\t%s\n", p.ID, p.ReplicasetName, p.Version, p.Lastping, p.Created)
+		fmt.Fprintf(result, "%s\t%s\t%s\t%s\n", p.Hostname, p.ReplicasetName, p.Version, p.Lastping)
 	}
 	tm.Println(result)
 

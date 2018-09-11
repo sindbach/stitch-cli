@@ -27,8 +27,8 @@ func NewAtlasOrgCommandFactory(ui cli.Ui) cli.CommandFactory {
 type AtlasOrgCommand struct {
 	*BaseCommand
 
-	flagOrgList   bool
-	flagProjectID string
+	flagOrgList bool
+	flagOrgID   string
 }
 
 // Help returns long-form help information for this command
@@ -38,8 +38,7 @@ func (ec *AtlasOrgCommand) Help() string {
 OPTIONS:
   --list
 	Get all Atlas organizations the authenticated user has access to.
-  --project-id [string]
-    Get an Atlas organization for a specific ID.
+
 ` +
 		ec.BaseCommand.Help()
 }
@@ -54,26 +53,25 @@ func (ec *AtlasOrgCommand) Run(args []string) int {
 	set := ec.NewFlagSet()
 
 	set.BoolVar(&ec.flagOrgList, "list", false, "")
-	set.StringVar(&ec.flagProjectID, "project-id", "", "")
 
 	if err := ec.BaseCommand.run(args); err != nil {
 		ec.UI.Error(err.Error())
 		return 1
 	}
 
-	if !ec.flagOrgList && ec.flagProjectID == "" {
+	if !ec.flagOrgList {
 		ec.UI.Error("see --help for more information")
 		return 1
 	}
 
-	if err := ec.run(ec.flagOrgList, ec.flagProjectID); err != nil {
+	if err := ec.run(ec.flagOrgList); err != nil {
 		ec.UI.Error(err.Error())
 		return 1
 	}
 	return 0
 }
 
-func (ec *AtlasOrgCommand) run(flagList bool, flagProjectID string) error {
+func (ec *AtlasOrgCommand) run(flagList bool) error {
 
 	user, err := ec.User()
 	if err != nil {
@@ -89,28 +87,13 @@ func (ec *AtlasOrgCommand) run(flagList bool, flagProjectID string) error {
 		return err
 	}
 
-	if flagProjectID != "" {
-		ps, err := ac.ProjectByOrgID(flagProjectID)
-		if err != nil {
-			return fmt.Errorf("%s", err)
-		}
-		result := tm.NewTable(0, 5, 5, ' ', 0)
-		fmt.Fprintf(result, "ID\tName\tReplicaSetCount\tShardCount\n")
-		for _, p := range ps {
-			fmt.Fprintf(result, "%s\t%s\t%d\t%d\n", p.ID, p.Name, p.ReplicaSetCount, p.ShardCount)
-		}
-		tm.Println(result)
-		tm.Flush()
-		return nil
-	}
-
 	u, err := ac.UserByName(user.Username)
 	if err != nil {
 		return fmt.Errorf("failed to list User info: %s", err)
 	}
 
 	result := tm.NewTable(0, 5, 5, ' ', 0)
-	fmt.Fprintf(result, "ID\tName\tRole\n")
+	fmt.Fprintf(result, "OrgID\tName\tRole\n")
 
 	for _, role := range u.Roles {
 		if strings.HasPrefix(role.Name, "ORG_") {
