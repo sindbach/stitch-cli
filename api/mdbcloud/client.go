@@ -36,6 +36,22 @@ type UserRole struct {
 	Name      string `json:"roleName"`
 }
 
+type databaseUserResponse struct {
+	Results []DatabaseUser `json:"results"`
+}
+
+type DatabaseUser struct {
+	DatabaseName string         `json:"databaseName"`
+	Username     string         `json:"username"`
+	Roles        []DatabaseRole `json:"roles"`
+}
+
+type DatabaseRole struct {
+	DatabaseName   string `json:"databaseName"`
+	CollectionName string `json:"collectionName"`
+	Name           string `json:"roleName"`
+}
+
 type orgResponse struct {
 	Results []Org `json:"results"`
 }
@@ -86,6 +102,7 @@ type Client interface {
 	ProjectByOrgID(string) ([]Project, error)
 	ProjectByID(string) (*Project, error)
 	ProjectByName(string) (*Project, error)
+	DBUsersByProjectID(string) ([]DatabaseUser, error)
 	ProcessByProjectID(string) ([]Process, error)
 	LogByProcessID(string, string, string) error
 	DeleteDatabaseUser(projectID string, username string) error
@@ -220,6 +237,20 @@ func (client *simpleClient) ProjectByName(projectName string) (*Project, error) 
 		return nil, fmt.Errorf(err.Error())
 	}
 	return &response, nil
+}
+
+func (client *simpleClient) DBUsersByProjectID(projectID string) ([]DatabaseUser, error) {
+	var response databaseUserResponse
+	err := client.SingleFetch(
+		fmt.Sprintf("%s/api/atlas/v1.0/groups/%s/databaseUsers", client.atlasAPIBaseURL, projectID),
+		fmt.Sprintf("failed to find DB users using Project ID [%s]", projectID),
+		fmt.Sprintf("failed to fetch DB users using Project ID [%s]", projectID),
+		&response,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(err.Error())
+	}
+	return response.Results, nil
 }
 
 func (client *simpleClient) ProcessByProjectID(projectID string) ([]Process, error) {

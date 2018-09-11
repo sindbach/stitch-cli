@@ -25,9 +25,10 @@ func NewAtlasProjectCommandFactory(ui cli.Ui) cli.CommandFactory {
 type AtlasProjectCommand struct {
 	*BaseCommand
 
-	flagProjectList bool
-	flagProjectID   string
-	flagOrgID       string
+	flagProjectList  bool
+	flagProjectUsers bool
+	flagProjectID    string
+	flagOrgID        string
 }
 
 // Help returns long-form help information for this command
@@ -41,6 +42,8 @@ OPTIONS:
 	Get an Atlas project using a specific ID.
   --org-id [string]
 	Get an Atlas project using a specific ID.
+  --users 
+	Get database users for a project.
 ` +
 		ac.BaseCommand.Help()
 }
@@ -55,6 +58,8 @@ func (ac *AtlasProjectCommand) Run(args []string) int {
 	set := ac.NewFlagSet()
 
 	set.BoolVar(&ac.flagProjectList, "list", false, "")
+	set.BoolVar(&ac.flagProjectUsers, "users", false, "")
+
 	set.StringVar(&ac.flagProjectID, "project-id", "", "")
 	set.StringVar(&ac.flagOrgID, "org-id", "", "")
 
@@ -62,11 +67,11 @@ func (ac *AtlasProjectCommand) Run(args []string) int {
 		ac.UI.Error(err.Error())
 		return 1
 	}
-	if !ac.flagProjectList && ac.flagProjectID == "" && ac.flagOrgID == "" {
+	if !ac.flagProjectList && ac.flagProjectID == "" && ac.flagOrgID == "" && !ac.flagProjectUsers {
 		ac.UI.Error("see --help for more information")
 		return 1
 	}
-	if err := ac.run(ac.flagProjectList, ac.flagOrgID, ac.flagProjectID); err != nil {
+	if err := ac.run(ac.flagProjectUsers, ac.flagOrgID, ac.flagProjectID); err != nil {
 		ac.UI.Error(err.Error())
 		return 1
 	}
@@ -74,7 +79,7 @@ func (ac *AtlasProjectCommand) Run(args []string) int {
 	return 0
 }
 
-func (ac *AtlasProjectCommand) run(flagList bool, flagOrgID string, flagProjectID string) error {
+func (ac *AtlasProjectCommand) run(flagProjectUsers bool, flagOrgID string, flagProjectID string) error {
 
 	user, err := ac.User()
 	if err != nil {
@@ -88,6 +93,23 @@ func (ac *AtlasProjectCommand) run(flagList bool, flagOrgID string, flagProjectI
 	client, err := ac.AtlasClient()
 	if err != nil {
 		return err
+	}
+
+	if flagProjectUsers && flagProjectID != "" {
+		ps, err := client.DBUsersByProjectID(flagProjectID)
+		if err != nil {
+			return fmt.Errorf("%s", err)
+		}
+		result := tm.NewTable(0, 5, 5, ' ', 0)
+		fmt.Fprintf(result, "Username\tAuthDB\tDBName\tCollName\tName\n")
+		for _, p := range ps {
+			for _, r := range p.Roles {
+				fmt.Fprintf(result, "%s\t%s\t%s\t%s\t%s\n", p.Username, p.DatabaseName, r.DatabaseName, r.CollectionName, r.Name)
+			}
+		}
+		tm.Println(result)
+		tm.Flush()
+		return nil
 	}
 
 	if flagOrgID != "" {

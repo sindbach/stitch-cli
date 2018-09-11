@@ -38,7 +38,6 @@ func (ec *AtlasOrgCommand) Help() string {
 OPTIONS:
   --list
 	Get all Atlas organizations the authenticated user has access to.
-
 ` +
 		ec.BaseCommand.Help()
 }
