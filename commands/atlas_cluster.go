@@ -1,6 +1,9 @@
 package commands
 
 import (
+	"fmt"
+
+	tm "github.com/buger/goterm"
 	u "github.com/sindbach/stitch-cli/user"
 
 	"github.com/mitchellh/cli"
@@ -19,63 +22,64 @@ func NewAtlasClusterCommandFactory(ui cli.Ui) cli.CommandFactory {
 	}
 }
 
-// AtlasClusterCommand is used to export a Stitch App
+// AtlasClusterCommand ...
 type AtlasClusterCommand struct {
 	*BaseCommand
 
-	flagProjectID  string
-	flagAppID      string
-	flagOutput     string
-	flagAsTemplate bool
+	flagClusterList bool
+	flagProjectID   string
 }
 
 // Help returns long-form help information for this command
 func (ec *AtlasClusterCommand) Help() string {
-	return `Export a stitch application to a local directory.
+	return `Atlas Clusters
 
-REQUIRED:
-  --app-id [string]
-	The App ID for your app (i.e. the name of your app followed by a unique suffix, like "my-app-nysja")
+REQUIRED: 
+  --project-id [string] 
+    Get an Atlas project using a specific ID.
+
 
 OPTIONS:
-  --project-id [string]
-	Lookup apps associated with this project id, as opposed to ids associated with the current user profile.
+  --list
+	Get all Atlas organizations the authenticated user has access to.
 
-  --as-template
-	Indicate that the application should be exported as a template.` +
+` +
 		ec.BaseCommand.Help()
 }
 
 // Synopsis returns a one-liner description for this command
 func (ec *AtlasClusterCommand) Synopsis() string {
-	return `Export a stitch application to a local directory.`
+	return `Access Atlas Cluster.`
 }
 
 // Run executes the command
 func (ec *AtlasClusterCommand) Run(args []string) int {
 	set := ec.NewFlagSet()
 
-	set.StringVar(&ec.flagOutput, "output", "", "")
-	set.StringVar(&ec.flagOutput, "o", "", "")
-	set.BoolVar(&ec.flagAsTemplate, "as-template", false, "")
+	set.BoolVar(&ec.flagClusterList, "list", false, "")
+	set.StringVar(&ec.flagProjectID, "project-id", "", "")
 
 	if err := ec.BaseCommand.run(args); err != nil {
 		ec.UI.Error(err.Error())
 		return 1
 	}
-
-	if err := ec.run(); err != nil {
-		ec.UI.Error(err.Error())
+	if ec.flagProjectID == "" {
+		ec.UI.Error("Project ID is required. See --help for more information")
+		return 1
+	}
+	if !ec.flagClusterList && ec.flagProjectID == "" {
+		ec.UI.Error("see --help for more information")
 		return 1
 	}
 
+	if err := ec.run(ec.flagProjectID); err != nil {
+		ec.UI.Error(err.Error())
+		return 1
+	}
 	return 0
 }
 
-func (ec *AtlasClusterCommand) run() error {
-	if ec.flagAppID == "" {
-		return errAppIDRequired
-	}
+func (ec *AtlasClusterCommand) run(flagProjectID string) error {
 
 	user, err := ec.User()
 	if err != nil {
@@ -86,10 +90,23 @@ func (ec *AtlasClusterCommand) run() error {
 		return u.ErrNotLoggedIn
 	}
 
-	//stitchClient, err := ec.AtlasClient()
-	//if err != nil {
-	//	return err
-	//}
+	ac, err := ec.AtlasClient()
+	if err != nil {
+		return err
+	}
 
+	cs, err := ac.ClustersByProjectID(flagProjectID)
+	if err != nil {
+		return fmt.Errorf("%s", err)
+	}
+
+	result := tm.NewTable(0, 5, 5, ' ', 0)
+	fmt.Fprintf(result, "ID\tName\tState\tPaused\n")
+
+	for _, c := range cs {
+		fmt.Fprintf(result, "%s\t%s\t%s\t%t\n", c.ID, c.Name, c.StateName, c.Paused)
+	}
+	tm.Println(result)
+	tm.Flush()
 	return nil
 }
