@@ -75,6 +75,52 @@ type Project struct {
 	ShardCount      int    `json:"shardCount"`
 }
 
+type clusterResponse struct {
+	Results []Cluster `json:"results"`
+}
+
+type Cluster struct {
+	Autoscaling              ClusterAutoScaling     `json:"autoScaling"`
+	BackupEnabled            bool                   `json:"backupEnabled"`
+	BIConnector              ClusterBIConnector     `json:"biConnector"`
+	ClusterType              string                 `json:"clusterType"`
+	DiskSizeGB               float32                `json:"diskSizeGB"`
+	EncryptionAtRestProvider string                 `json:"encryptionAtRestProvider"`
+	GroupID                  string                 `json:"groupId"`
+	ID                       string                 `json:"id"`
+	MongoDBVersion           string                 `json:"mongoDBVersion"`
+	MongoDBMajorVersion      string                 `json:"MongoDBMajorVersion"`
+	MongoURI                 string                 `json:"mongoURI"`
+	MongoURIUpdated          string                 `json:"mongoURIUpdated"`
+	MongoURIWithOptions      string                 `json:"mongoURIWithOptions"`
+	Name                     string                 `json:"name"`
+	NumShards                int32                  `json:"numShards"`
+	Paused                   bool                   `json:"paused"`
+	ProviderBackupEnabled    bool                   `json:"providerBackupEnabled"`
+	ProviderSettings         ClusterProviderSetting `json:"providerSettings"`
+	ReplicationFactor        int32                  `json:"replicationFactor"`
+	StateName                string                 `json:"stateName"`
+}
+
+type ClusterAutoScaling struct {
+	DiskGBEnabled bool
+}
+
+type ClusterBIConnector struct {
+	Enabled        bool   `json:"enabled"`
+	ReadPreference string `json:""`
+}
+
+type ClusterProviderSetting struct {
+	Name                string  `json:"providerName"`
+	BackingProviderName string  `json:"backingProviderName"`
+	RegionName          string  `json:"regionName"`
+	InstanceSizeName    string  `json:"instanceSizeName"`
+	DiskIOPS            float32 `json:"diskIOPS"`
+	DiskTypeName        string  `json:"diskTypeName"`
+	EncryptEBSVolume    bool    `json:"encryptEBSVolume"`
+}
+
 type processResponse struct {
 	Results []Process `json:"results"`
 }
@@ -83,7 +129,7 @@ type processResponse struct {
 type Process struct {
 	ID             string    `json:"id"`
 	Hostname       string    `json:"hostname"`
-	Port           int       `json:"port"`
+	Port           int32     `json:"port"`
 	TypeName       string    `json:"typeName"`
 	ReplicasetName string    `json:"replicaSetName"`
 	ShardName      string    `json:"shardName"`
@@ -102,6 +148,7 @@ type Client interface {
 	ProjectByOrgID(string) ([]Project, error)
 	ProjectByID(string) (*Project, error)
 	ProjectByName(string) (*Project, error)
+	ClustersByProjectID(string) ([]Cluster, error)
 	DBUsersByProjectID(string) ([]DatabaseUser, error)
 	ProcessByProjectID(string) ([]Process, error)
 	LogByProcessID(string, string, string) error
@@ -237,6 +284,20 @@ func (client *simpleClient) ProjectByName(projectName string) (*Project, error) 
 		return nil, fmt.Errorf(err.Error())
 	}
 	return &response, nil
+}
+
+func (client *simpleClient) ClustersByProjectID(projectID string) ([]Cluster, error) {
+	var response clusterResponse
+	err := client.SingleFetch(
+		fmt.Sprintf("%s/api/atlas/v1.0/groups/%s/clusters", client.atlasAPIBaseURL, projectID),
+		fmt.Sprintf("failed to find Clusters using Project ID [%s]", projectID),
+		fmt.Sprintf("failed to fetch Clusters using Project ID [%s]", projectID),
+		&response,
+	)
+	if err != nil {
+		return nil, fmt.Errorf(err.Error())
+	}
+	return response.Results, nil
 }
 
 func (client *simpleClient) DBUsersByProjectID(projectID string) ([]DatabaseUser, error) {
